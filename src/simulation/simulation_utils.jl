@@ -1,9 +1,9 @@
-function get_model(base_model::String, model_settings::ModelSettings)
+function get_model(base_model::String, model_settings::ModelSettings; validate = true)
 
     if base_model == "LithiumIonBattery"
-        model = LithiumIonBattery(; model_settings = model_settings)
+        model = LithiumIonBattery(; model_settings = model_settings, validate)
     elseif base_model == "SodiumIonBattery"
-        model = SodiumIonBattery(; model_settings = model_settings)
+        model = SodiumIonBattery(; model_settings = model_settings, validate)
     else
         error("BaseModel $base_model is not valid. The following models are available: LithiumIonBattery, SodiumIonBattery")
     end

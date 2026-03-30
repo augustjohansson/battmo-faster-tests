@@ -23,9 +23,9 @@ mutable struct SodiumIonBattery <: IntercalationBattery
     multimodel::Union{Missing, MultiModel}
 
 
-    function SodiumIonBattery(; model_settings = get_default_model_settings(SodiumIonBattery))
+    function SodiumIonBattery(; model_settings = get_default_model_settings(SodiumIonBattery), validate = true)
 
-        is_valid = validate_parameter_set(model_settings)
+        is_valid = validate ? validate_parameter_set(model_settings) : true
 
         model_geometry = model_settings["ModelFramework"]
         name = "Setup object for a $model_geometry lithium-ion model"

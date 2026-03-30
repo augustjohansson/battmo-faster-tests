@@ -44,6 +44,7 @@ A `Simulation` struct instance that includes:
 """
 struct Simulation <: AbstractSimulation
     is_valid::Bool
+    validate::Bool
     model::ModelConfigured
     cell_parameters::CellParameters
     cycling_protocol::CyclingProtocol
@@ -65,6 +66,7 @@ struct Simulation <: AbstractSimulation
             time_steps = nothing,
             initial_state = nothing,
             hook = nothing,
+            validate = true,
             kwargs...,
         ) where {M <: ModelConfigured}
 
@@ -72,14 +74,18 @@ struct Simulation <: AbstractSimulation
 
             # Here will come a validation function
             model_settings = model.settings
-            cell_parameters_is_valid = validate_parameter_set(cell_parameters, model_settings)
-            cycling_protocol_is_valid = validate_parameter_set(cycling_protocol, model_settings)
-            simulation_settings_is_valid = validate_parameter_set(simulation_settings, model_settings)
+            if validate
+                cell_parameters_is_valid = validate_parameter_set(cell_parameters, model_settings)
+                cycling_protocol_is_valid = validate_parameter_set(cycling_protocol, model_settings)
+                simulation_settings_is_valid = validate_parameter_set(simulation_settings, model_settings)
 
-            if cell_parameters_is_valid && cycling_protocol_is_valid && simulation_settings_is_valid
-                is_valid = true
+                if cell_parameters_is_valid && cycling_protocol_is_valid && simulation_settings_is_valid
+                    is_valid = true
+                else
+                    is_valid = false
+                end
             else
-                is_valid = false
+                is_valid = true
             end
 
             # Combine the parameter sets and settings
@@ -107,7 +113,8 @@ struct Simulation <: AbstractSimulation
                 simulator = sim_cfg.simulator
                 time_steps = sim_cfg.time_steps
 
-                return new{}(is_valid, model, cell_parameters, cycling_protocol, simulation_settings, time_steps, forces, initial_state, grids, couplings, parameters, simulator)
+                return new{}(is_valid, validate, model, cell_parameters, cycling_protocol, simulation_settings, time_steps, forces, initial_state, grids, couplings, parameters, simulator)
+
             catch e
                 if is_valid == false
                     error(
@@ -207,15 +214,15 @@ sim = Simulation(model, cell_parameters, cycling_protocol)
 result = solve(sim; info_level = 1)
 ```
 """
-function solve(problem::Simulation; accept_invalid = false, solver_settings = get_default_solver_settings(problem.model), logger = nothing, kwargs...)
+function solve(problem::Simulation; accept_invalid = false, solver_settings = get_default_solver_settings(problem.model), logger = nothing, validate = problem.validate, kwargs...)
 
 
     # Note: Typically function_to_solve is run_battery
     return if accept_invalid == true
-        output = solve_simulation(problem; solver_settings, logger, kwargs...)
+        output = solve_simulation(problem; solver_settings, logger, validate, kwargs...)
     else
         if problem.is_valid == true
-            output = solve_simulation(problem; solver_settings, logger, kwargs...)
+            output = solve_simulation(problem; solver_settings, logger, validate, kwargs...)
 
             return output
         else
@@ -275,7 +282,7 @@ A named tuple with the following fields:
 result = solve_simulation(sim)
 ```
 """
-function solve_simulation(sim::Union{Simulation, NamedTuple}; solver_settings, logger = nothing, kwargs...)
+function solve_simulation(sim::Union{Simulation, NamedTuple}; solver_settings, logger = nothing, validate = true, kwargs...)
 
     simulator = sim.simulator
     model = sim.model
@@ -297,6 +304,7 @@ function solve_simulation(sim::Union{Simulation, NamedTuple}; solver_settings, l
         parameters;
         solver_settings,
         logger,
+        validate,
         kwargs...,
     )
 
@@ -461,11 +469,11 @@ function kwarg_dict(; kwargs...)
     return kwarg_dict
 end
 
-function process_solver_settings_kwargs(solver_settings; kwargs...)
+function process_solver_settings_kwargs(solver_settings; validate = true, kwargs...)
 
 
     # Validate solver settings
-    solver_settings_is_valid = validate_parameter_set(solver_settings)
+    solver_settings_is_valid = validate ? validate_parameter_set(solver_settings) : true
     return solver_settings_is_valid
 end
 
@@ -493,6 +501,7 @@ function solver_configuration(
         use_model_scaling::Bool = true,
         solver_settings,
         logger = nothing,
+        validate = true,
         kwargs...
     )
 
@@ -501,7 +510,7 @@ function solver_configuration(
     solver_settings = overwritten_settings.solver_settings
 
     # Validate solver settings
-    solver_settings_is_valid = validate_parameter_set(solver_settings)
+    solver_settings_is_valid = validate ? validate_parameter_set(solver_settings) : true
 
 
     non_linear_solver = solver_settings["NonLinearSolver"]
