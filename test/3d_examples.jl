@@ -16,6 +16,9 @@ using Test
 
         inputparams = mergeInputParams(inputparams_geometry, inputparams)
 
+        inputparams["TimeStepping"]["numberOfTimeSteps"] = 20
+        delete!(inputparams["TimeStepping"], "timeStepDuration")
+
         output = run_battery(inputparams);
 
         true

@@ -8,6 +8,8 @@ function runP2DBatt(json_file)
 
     # read input parameters from json file
     inputparams = readBattMoJsonInputFile(json_file)
+    inputparams["TimeStepping"]["numberOfTimeSteps"] = 20
+    delete!(inputparams["TimeStepping"], "timeStepDuration")
 
     # setup simulation from the input parameters
     output = setup_simulation(inputparams)

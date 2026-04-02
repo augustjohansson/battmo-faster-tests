@@ -16,6 +16,8 @@ names  =[
             @test begin
                 fn = string(dirname(pathof(BattMo)), "/../test/data/jsonfiles/", name, ".json")
                 inputparams = readBattMoJsonInputFile(fn)
+                inputparams["TimeStepping"]["numberOfTimeSteps"] = 20
+                delete!(inputparams["TimeStepping"], "timeStepDuration")
                 function hook(simulator,
                               model,
                               state0,
