@@ -16,8 +16,10 @@ using Test
 
         inputparams = mergeInputParams(inputparams_geometry, inputparams)
 
-        inputparams["TimeStepping"]["numberOfTimeSteps"] = 20
-        delete!(inputparams["TimeStepping"], "timeStepDuration")
+        # Use a large time step to keep the test fast (~20 steps).
+        # p2d_40_jl_chen2020: CCCV 10-cycle, totalTime=108000s -> 5400s/step gives ~20 steps.
+        inputparams["TimeStepping"]["timeStepDuration"] = 5400.0
+        delete!(inputparams["TimeStepping"], "numberOfTimeSteps")
 
         output = run_battery(inputparams);
 
